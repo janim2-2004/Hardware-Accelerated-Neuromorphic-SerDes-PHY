@@ -2,6 +2,9 @@
 
 In: seed.  Out: bit array.  Params: order 7/15/23/31.
 Hardware counterpart: M3 PRBS generator (RTL). Same polynomial and seed must be used for the BER checker.
+
+Essentially a shift register that XORs the feedback taps to generate a new bit, and shifts the register left by one.  
+The output is the new bit.
 """
 import numpy as np
 
