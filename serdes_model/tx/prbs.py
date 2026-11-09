@@ -23,16 +23,33 @@ class PRBS:
             raise ValueError("LFSR seed must be non-zero")
         self.state = self._init_state
 
+        self._last_bit = 0 # What the tx_data register holds when tx_en = 0
+
     def reset(self):
         self.state = self._init_state
+        self._last_bit = 0
 
-    def next_bits(self, n: int) -> np.ndarray:
+    def configure(self, order: int = 7, seed: int | None = None):
+        self.__init__(order, seed)
+
+    def next_bits(self, n: int, enable=None) -> np.ndarray:
+
         a, b = TAPS[self.order]
         out = np.empty(n, dtype=np.uint8)
+        last = self._last_bit
         s = self.state
+        
         for i in range(n):
+            # If tx_en == 0, output bit is held as the last bit that was shifted
+            if enable is not None and not enable[i]:
+                out[i] = last
+                continue
             bit = ((s >> (a - 1)) ^ (s >> (b - 1))) & 1
             s = ((s << 1) | bit) & self.mask
+
+            last = bit
             out[i] = bit
+
         self.state = s
+        self._last_bit = last   # carry the held value into the next call
         return out

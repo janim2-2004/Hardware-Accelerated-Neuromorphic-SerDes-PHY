@@ -29,6 +29,14 @@ class LinkConfig:
     # --- reproducibility ---
     seed: int = 1234
 
+    # --- TX ---
+    prbs_seed: int = 0                 # 0 -> all ones (LFSR state must never be 0)
+    line_code: str = "none"            # "none" | "scrambler" | "8b10b"
+    tx_ppm: float = 0.0                # TX clock error in ppm
+    tx_rise_time_s: float = 0.0        # LVDS output 0-100% rise time
+    tx_jitter_sigma_ui: float = 0.0    # RMS TX random jitter, in UI
+
+
     @property
     def ui_s(self) -> float:
         """Unit interval (bit period) in seconds."""
