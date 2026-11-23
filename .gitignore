@@ -1,3 +1,4 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+/rtl_top/tx_fpga/vivado/tx_bringup/
