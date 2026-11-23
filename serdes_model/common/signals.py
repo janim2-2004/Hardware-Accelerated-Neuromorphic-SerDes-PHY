@@ -23,10 +23,35 @@ class EdgeStream:
     def n_edges(self) -> int:
         return len(self.edge_times)
 
-    def shifted(self, dt: np.ndarray) -> "EdgeStream":
-        """Return a copy with each edge moved by dt (scalar or per-edge array). Re-sorts if edges cross."""
-        times = self.edge_times + dt
-        return EdgeStream(np.sort(times), self.initial_level)
+    def levels_after_edges(self) -> np.ndarray:
+        """Line level just AFTER each edge (1 = rising edge, 0 = falling edge). Edges strictly alternate,
+        so edge k leaves the line at initial_level ^ ((k + 1) mod 2). Used by polarity-dependent blocks."""
+        k = np.arange(self.n_edges)
+        return (self.initial_level ^ ((k + 1) & 1)).astype(np.uint8)
+
+    def shifted(self, dt, swallow_crossed: bool = True) -> "EdgeStream":
+        """Return a copy with each edge moved by dt (scalar or per-edge array).
+
+        Edges are shifted in their original order. If jitter pushes an edge onto or past its neighbour, the
+        pulse between them has zero or negative width and physically does not exist: with
+        swallow_crossed=True both edges are removed (cascading, so a swallowed pulse can expose a new
+        crossing). With swallow_crossed=False the times are just re-sorted (legacy behaviour).
+        """
+        times = np.asarray(self.edge_times + dt, dtype=float)
+        # Fast path (almost always taken): order intact, nothing crossed.
+        if len(times) < 2 or np.all(times[1:] > times[:-1]):
+            return EdgeStream(times, self.initial_level)
+        if not swallow_crossed:
+            return EdgeStream(np.sort(times), self.initial_level)
+        # Slow path: stack walk. A new edge at or before the previous kept edge cancels it (pair removed).
+        # Removing a pair keeps edge parity, so the polarity of every surviving edge stays correct.
+        kept = []
+        for t in times.tolist():
+            if kept and t <= kept[-1]:
+                kept.pop()
+            else:
+                kept.append(t)
+        return EdgeStream(np.array(kept, dtype=float), self.initial_level)
 
 
 @dataclass

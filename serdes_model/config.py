@@ -21,10 +21,27 @@ class LinkConfig:
     ps_handshake_cycles: int = 12      # PSEN -> PSDONE latency in PSCLK cycles (confirm in UG472)
 
     # --- impairments (defaults = ideal) ---
-    freq_offset_ppm: float = 0.0
+    freq_offset_ppm: float = 0.0       # TX/RX clock mismatch (channel.FrequencyOffset)
     sj_amplitude_ui: float = 0.0       # sinusoidal jitter, peak, in UI
     sj_freq_hz: float = 1e5
     rj_sigma_ui: float = 0.0           # random jitter, RMS, in UI
+    dj_peak_ui: float = 0.0            # deterministic (duty-cycle) jitter, peak, in UI
+
+    # --- TX driver (tx.TxDriver) ---
+    tx_rise_time_s: float = 0.0        # finite rise time -> fixed 50% delay of rise/2
+    tx_jitter_sigma_s: float = 0.0     # TX-side random jitter, RMS, seconds
+
+    # --- channel (channel.ISIChannel / channel.ThresholdNoise) ---
+    isi_bandwidth_hz: float | None = None   # first-order RC bandwidth; None = infinite (no ISI)
+    noise_sigma_v: float = 0.0         # voltage noise at the RX threshold, RMS volts
+    slew_v_per_s: float = 3.5e7        # edge slew at the threshold (volts -> seconds); 350 mV / 10 ns
+
+    # --- RX front end (rx.LVDSFrontEnd) ---
+    fe_threshold_offset_s: float = 0.0  # input offset expressed as time: rising late, falling early
+    fe_hysteresis_s: float = 0.0        # total hysteresis expressed as time: all edges late by half of it
+
+    # --- test control (I5) ---
+    channel_bypass: bool = False       # True = jumper straight through (cfg_loopback): skip every impairment
 
     # --- reproducibility ---
     seed: int = 1234
